@@ -1,1 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis de embudo de ventas</title>
+<style>
+:root{
+  --bg:#0b0d10;--panel:#12161b;--panel2:#171c22;--line:#29323c;
+  --text:#f5f7fa;--muted:#9da8b4;--green:#37d39a;--yellow:#f2c94c;
+  --red:#ff5d67;--blue:#69a7ff
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#090b0e,#0f1318);color:var(--text);font-family:Inter,Arial,sans-serif}
+.wrap{max-width:1180px;margin:auto;padding:50px 38px 90px}
+.eyebrow{color:#7f8b98;text-transform:uppercase;letter-spacing:2px;font-size:11px;font-weight:800}
+h1{font-size:48px;line-height:1.02;margin:10px 0 14px;letter-spacing:-2px}
+.lead{max-width:820px;color:#aeb7c2;font-size:18px;line-height:1.6;margin:0}
+.topline{border-bottom:1px solid var(--line);padding-bottom:32px}
+.periods{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.pill{border:1px solid var(--line);padding:8px 12px;border-radius:99px;color:#c9d0d8;font-size:12px;background:#11151a}
+.section{margin-top:76px}
+.section h2{font-size:25px;margin:0 0 14px;letter-spacing:-.6px;line-height:1.25}
+.section p.sub{color:var(--muted);margin:0 0 32px;line-height:1.65}
+.funnel{display:flex;flex-direction:column;gap:10px}
+.step{display:grid;grid-template-columns:58px minmax(0,1fr) 145px;align-items:center;gap:22px;padding:23px 30px;border-radius:17px;border:1px solid var(--line);background:var(--panel);position:relative;min-width:0}
+.step:after{content:"";position:absolute;left:29px;bottom:-10px;width:2px;height:10px;background:#303943}
+.step:last-child:after{display:none}
+.step .ico{font-size:22px;text-align:center}
+.step strong{font-size:17px;display:block;line-height:1.4}
+.step small{display:block;color:var(--muted);font-size:12px;margin-top:5px;line-height:1.6}
+.step .meaning{margin-top:11px;color:#d6dce2;font-size:13px;line-height:1.55}
+.step .abandon{color:#8d98a4}
+.status{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;text-align:right;line-height:1.5}
+.greenstep{border-left:4px solid var(--green)}.yellowstep{border-left:4px solid var(--yellow)}.redstep{border-left:4px solid var(--red)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin:19px 0 0;color:#aab4bf;font-size:12px}
+.legend span{display:flex;align-items:center;gap:7px}.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.hero-diagnosis{display:grid;grid-template-columns:1.05fr .95fr;gap:24px;margin-top:34px}
+.bigcard{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:34px;min-width:0}
+.bigcard .number{font-size:45px;font-weight:900;letter-spacing:-2px;line-height:1.15;margin-top:13px}
+.bigcard .label{color:#c5cdd5;font-size:14px;margin-top:8px;line-height:1.45}
+.bigcard .explain{color:var(--muted);font-size:14px;line-height:1.7;margin-top:22px}
+.alert{border-color:#513238;background:linear-gradient(145deg,#171418,#12161b)}.alert .number{color:var(--red)}
+.good{border-color:#244d40}.good .number{color:var(--green)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;width:100%}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:30px;min-width:0;overflow:hidden}
+.card h3{font-size:17px;margin:16px 0 12px;line-height:1.4}
+.card p{font-size:13px;line-height:1.7;color:var(--muted);margin:0}
+.card .metric{font-size:25px;font-weight:900;margin-top:18px;line-height:1.45;overflow-wrap:anywhere}
+.card .mini{font-size:12px;color:#9da8b4;line-height:1.6;margin-top:10px}
+.compare{background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.row{display:grid;grid-template-columns:1.45fr .75fr .75fr .75fr 2fr;align-items:center;padding:19px 24px;border-bottom:1px solid var(--line);gap:14px}
+.row:last-child{border-bottom:0}.row.head{background:#171c22;color:#87929e;text-transform:uppercase;font-size:10px;letter-spacing:1px;font-weight:800}
+.row div{font-size:13px;line-height:1.5}.row .main{font-weight:700}.down{color:var(--red);font-weight:800}.up{color:var(--green);font-weight:800}
+.context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;width:100%}
+.aug{border-color:#34465c;background:linear-gradient(145deg,#131922,#12161b)}.aug .metric{color:var(--blue)}
+.priority{margin-top:22px;padding:23px 26px;border-radius:16px;background:#191719;border:1px solid #4b3035;color:#e9edf1;line-height:1.65}
+.checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;width:100%}
+.check{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:30px;min-width:0;overflow:hidden}
+.check .tag{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#84909d}
+.check h3{margin:10px 0 10px;font-size:16px;line-height:1.4}.check p{color:var(--muted);font-size:13px;line-height:1.7;margin:0}
+.note{color:#74808c;font-size:11px;line-height:1.65;margin-top:24px}
+@media(max-width:900px){
+ .wrap{padding:35px 22px 65px}h1{font-size:40px}
+ .hero-diagnosis,.grid3,.context,.checks{grid-template-columns:1fr}
+ .step{grid-template-columns:46px minmax(0,1fr);padding:22px 22px}
+ .step .status{grid-column:2;text-align:left;margin-top:4px}
+ .row{grid-template-columns:1.5fr .8fr .8fr .8fr;gap:8px}.row div:last-child{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
 
+<div class="topline">
+  <div class="eyebrow">Ecommerce · Diagnóstico ejecutivo</div>
+  <h1>Análisis de embudo<br>de ventas</h1>
+  <p class="lead">Una lectura integrada del recorrido para identificar qué etapa se mantiene estable, dónde aparece la caída y en qué punto puede estar afectando la generación de ventas.</p>
+  <div class="periods">
+    <span class="pill">GA4 · Junio</span>
+    <span class="pill">GA4 · Agosto · Liquidación</span>
+    <span class="pill">GA4 · Sep 1–19</span>
+    <span class="pill">Meta · Ago 22–31 vs Sep 1–19</span>
+    <span class="pill">TikTok · embudo reportado</span>
+  </div>
+</div>
+
+<section class="section">
+<h2>La ruta completa</h2>
+<p class="sub">Cada porcentaje indica cuánto de una etapa pasa a la siguiente. La nota debajo explica exactamente qué representa el porcentaje y muestra el abandono correspondiente. La compra es el resultado final del último tramo.</p>
+
+<div class="funnel">
+
+<div class="step greenstep">
+  <div class="ico">📣</div>
+  <div>
+    <strong>Campañas</strong>
+    <small>La publicidad genera entradas al sitio.</small>
+    <div class="meaning"><b>Estado:</b> no aparece una señal de deterioro en la entrada al embudo.</div>
+  </div>
+  <div class="status" style="color:var(--green)">Paso OK</div>
+  <div class="meaning" style="grid-column:2 / 4; margin-top:8px; padding:10px 12px; border:1px solid rgba(0,161,156,.28); border-radius:10px; background:rgba(0,161,156,.06);"><b>Confirmación Meta Ads · CTR:</b> Junio 3,82% · Agosto 4,73% · Septiembre (1–20) 4,75%. De cada 100 impresiones, aproximadamente 4,75 generaron un clic en septiembre. El CTR está ligeramente por encima de agosto, reforzando que las personas siguen viendo e interactuando con los anuncios.</div>
+</div>
+
+<div class="step greenstep">
+  <div class="ico">🚪</div>
+  <div>
+    <strong>Tráfico → Producto</strong>
+    <small>El usuario llega al sitio y comienza a navegar.</small>
+    <div class="meaning"><b>Jun 55,2% · Ago 55,9% · Sep 56,0%</b> llegan a ver un producto.</div>
+    <div class="meaning abandon">Abandono: Jun 44,8% · Ago 44,1% · Sep 44,0%.</div>
+    <small>¿Qué mide? De cada 100 usuarios que inician sesión, cuántos llegan a ver un producto.</small>
+  </div>
+  <div class="status" style="color:var(--green)">Paso OK<br><span>→ Producto</span></div>
+</div>
+
+<div class="step yellowstep">
+  <div class="ico">🛍️</div>
+  <div>
+    <strong>Producto → Carrito</strong>
+    <small>El usuario ya está evaluando un producto concreto.</small>
+    <div class="meaning"><b>Jun 21,7% · Ago 21,5% · Sep 16,7%</b> pasan al carrito.</div>
+    <div class="meaning abandon">Abandono: Jun 78,3% · Ago 78,5% · Sep 83,3%.</div>
+    <small>¿Qué mide? De cada 100 usuarios que ven un producto, cuántos agregan algo al carrito.</small>
+  </div>
+  <div class="status" style="color:var(--yellow)">Primera alerta<br><span>→ Carrito</span></div>
+</div>
+
+<div class="step redstep">
+  <div class="ico">🛒</div>
+  <div>
+    <strong>Carrito → Inicio de compra</strong>
+    <small>El usuario ya mostró una intención de compra.</small>
+    <div class="meaning"><b>Jun 31,2% · Ago 31,2% · Sep 27,2%</b> pasan al inicio de compra.</div>
+    <div class="meaning abandon">Abandono: Jun 68,8% · Ago 68,8% · Sep 72,8%.</div>
+    <small>¿Qué mide? De cada 100 usuarios que agregan al carrito, cuántos comienzan la compra.</small>
+  </div>
+  <div class="status" style="color:var(--red)">Alerta máxima<br><span>→ Inicio de compra</span></div>
+</div>
+
+<div class="step greenstep">
+  <div class="ico">💳</div>
+  <div>
+    <strong>Inicio de compra → Compra</strong>
+    <small>El usuario ya comenzó el proceso para completar el pedido.</small>
+    <div class="meaning"><b>Jun 33,1% · Ago 39,6% · Sep 44,3%</b> terminan comprando.</div>
+    <div class="meaning abandon">Abandono: Jun 66,9% · Ago 60,4% · Sep 55,7%.</div>
+    <small>¿Qué mide? De cada 100 usuarios que comienzan la compra, cuántos terminan comprando.</small>
+    <div class="meaning" style="margin-top:12px;color:#d6dce2"><b>Lectura:</b> esta etapa mejora en septiembre. Quienes llegan al inicio de compra tienen una mayor proporción de cierre.</div>
+  </div>
+  <div class="status" style="color:var(--green)">Paso OK · mejora<br><span>→ Compra</span></div>
+</div>
+
+</div>
+<div class="legend">
+  <span><i class="dot" style="background:var(--green)"></i> Paso OK / mejora</span>
+  <span><i class="dot" style="background:var(--yellow)"></i> Primera alerta</span>
+  <span><i class="dot" style="background:var(--red)"></i> Alerta máxima</span>
+</div>
+</section>
+
+<section class="section">
+<div class="hero-diagnosis">
+  <div class="bigcard good">
+    <div class="eyebrow">Entrada estable</div>
+    <div class="number">55,2% · 55,9% · 56,0%</div>
+    <div class="label">Jun · Ago · Sep · Tráfico → Producto</div>
+    <div class="explain"><b>¿Qué significa?</b> De cada 100 usuarios que inician sesión, aproximadamente 55 llegan a ver un producto. El comportamiento se mantiene estable, por lo que no aparece aquí una caída estructural.</div>
+  </div>
+  <div class="bigcard alert">
+    <div class="eyebrow">Principal alerta</div>
+    <div class="number">31,2% · 31,2% → 27,2%</div>
+    <div class="label">Jun · Ago → Sep · Carrito → Inicio de compra</div>
+    <div class="explain"><b>¿Qué significa?</b> De cada 100 usuarios que agregan al carrito, pasan de aproximadamente 31 a 27 al inicio de compra. El abandono sube de 68,8% a 72,8%.</div>
+  </div>
+</div>
+</section>
+
+<section class="section">
+<h2>La caída aparece en dos momentos</h2>
+<p class="sub">Septiembre muestra dos pérdidas consecutivas antes de que comience el proceso de compra. La primera aparece al pasar del producto al carrito y la principal al pasar del carrito al inicio de compra.</p>
+<div class="grid3">
+  <div class="card">
+    <div class="eyebrow">01 · Primera alerta</div>
+    <h3>Producto → Carrito</h3>
+    <p><b>¿Qué significa?</b> De cada 100 usuarios que ven un producto, aproximadamente 22 agregan algo al carrito en Jun/Ago, pero solo 17 en Sep.</p>
+    <div class="metric">21,7% · 21,5% · 16,7%</div>
+    <div class="mini">Jun · Ago · Sep · pasan al carrito</div>
+    <div class="mini">Abandono: 78,3% · 78,5% · 83,3%.</div>
+  </div>
+  <div class="card" style="border-color:#513238">
+    <div class="eyebrow">02 · Principal pérdida</div>
+    <h3>Carrito → Inicio de compra</h3>
+    <p><b>¿Qué significa?</b> De cada 100 usuarios que agregan algo al carrito, aproximadamente 31 comienzan la compra en Jun/Ago, pero solo 27 en Sep.</p>
+    <div class="metric" style="color:var(--red)">31,2% · 31,2% · 27,2%</div>
+    <div class="mini">Jun · Ago · Sep · pasan al inicio de compra</div>
+    <div class="mini">Abandono: 68,8% · 68,8% · 72,8%.</div>
+  </div>
+  <div class="card">
+    <div class="eyebrow">03 · Sin deterioro</div>
+    <h3>Inicio de compra → Compra</h3>
+    <p><b>¿Qué significa?</b> De cada 100 usuarios que comienzan la compra, terminan comprando 33 en Jun, 40 en Ago y 44 en Sep.</p>
+    <div class="metric" style="color:var(--green)">33,1% · 39,6% · 44,3%</div>
+    <div class="mini">Jun · Ago · Sep · terminan comprando</div>
+    <div class="mini">Abandono: 66,9% · 60,4% · 55,7%.</div>
+  </div>
+</div>
+</section>
+
+<section class="section">
+<h2>GA4 · evolución del recorrido</h2>
+<p class="sub">Esta tabla es la referencia principal del análisis. Cada porcentaje responde a la pregunta: <b>“De cada 100 usuarios de la etapa anterior, ¿cuántos pasan a la siguiente?”</b></p>
+<div class="compare">
+  <div class="row head"><div>Etapa</div><div>Jun</div><div>Ago</div><div>Sep</div><div>¿Qué mide?</div></div>
+  <div class="row"><div class="main">Tráfico → Producto</div><div>55,2%</div><div>55,9%</div><div class="up">56,0%</div><div>De cada 100 usuarios que inician sesión, cuántos llegan a ver un producto.</div></div>
+  <div class="row"><div class="main">Producto → Carrito</div><div>21,7%</div><div>21,5%</div><div class="down">16,7%</div><div>De cada 100 usuarios que ven un producto, cuántos agregan algo al carrito.</div></div>
+  <div class="row"><div class="main">Carrito → Inicio de compra</div><div>31,2%</div><div>31,2%</div><div class="down">27,2%</div><div>De cada 100 usuarios que agregan al carrito, cuántos comienzan la compra.</div></div>
+  <div class="row"><div class="main">Inicio de compra → Compra</div><div>33,1%</div><div>39,6%</div><div class="up">44,3%</div><div>De cada 100 usuarios que comienzan la compra, cuántos terminan comprando.</div></div>
+</div>
+</section>
+
+<section class="section">
+<h2>Conversión total del recorrido</h2>
+<p class="sub">Aquí el porcentaje responde otra pregunta: de todos los usuarios que iniciaron sesión, ¿cuántos terminaron comprando?</p>
+<div class="grid3">
+  <div class="card"><div class="eyebrow">Jun</div><div class="metric">1,24%</div><p><b>¿Qué significa?</b> De cada 100 inicios de sesión, aproximadamente 1,24 terminaron en compra.</p></div>
+  <div class="card"><div class="eyebrow">Ago · liquidación</div><div class="metric">1,49%</div><p><b>¿Qué significa?</b> De cada 100 inicios de sesión, aproximadamente 1,49 terminaron en compra.</p></div>
+  <div class="card"><div class="eyebrow">Sep · 1–19</div><div class="metric" style="color:var(--yellow)">1,12%</div><p><b>¿Qué significa?</b> De cada 100 inicios de sesión, aproximadamente 1,12 terminaron en compra.</p></div>
+</div>
+</section>
+
+<section class="section">
+<h2>Meta + TikTok · validación del mismo recorrido</h2>
+<p class="sub">Las plataformas aportan evidencia complementaria. Sus eventos no representan exactamente los mismos usuarios únicos de GA4, por lo que se utilizan para validar la dirección de las señales, no para reemplazar la lectura mensual de GA4.</p>
+<div class="grid3">
+  <div class="card">
+    <div class="eyebrow">Meta · Producto → Carrito</div>
+    <h3>Avance relativamente estable</h3>
+    <p><b>¿Qué significa?</b> En los períodos comparados, de los eventos de producto registrados por Meta, una proporción similar avanza al carrito.</p>
+    <div class="metric">29,5% <span style="font-size:11px;color:#8995a1">Ago 22–31</span> → 28,2% <span style="font-size:11px;color:#8995a1">Sep 1–19</span></div>
+    <div class="mini">Abandono: 70,5% → 71,8%.</div>
+  </div>
+  <div class="card" style="border-color:#513238">
+    <div class="eyebrow">Meta · Carrito → Inicio de compra</div>
+    <h3>La misma alerta</h3>
+    <p><b>¿Qué significa?</b> De cada 100 eventos de carrito, la proporción que avanza al inicio de compra baja en el período de septiembre.</p>
+    <div class="metric" style="color:var(--red)">21,3% <span style="font-size:11px;color:#8995a1">Ago 22–31</span> → 17,4% <span style="font-size:11px;color:#8995a1">Sep 1–19</span></div>
+    <div class="mini">Abandono: 78,7% → 82,6%.</div>
+  </div>
+  <div class="card">
+    <div class="eyebrow">TikTok · Carrito → Inicio de compra</div>
+    <h3>Fuga fuerte en este tramo</h3>
+    <p><b>¿Qué significa?</b> Del volumen de Add to Cart reportado, solo una parte pequeña llega a Initiate Checkout.</p>
+    <div class="metric" style="color:var(--red)">8,9% <span style="font-size:11px;color:#8995a1">avance</span></div>
+    <div class="mini">Abandono: 91,1%. Este dato refuerza la alerta del tramo.</div>
+  </div>
+</div>
+<div class="note">Meta: agosto 22–31 vs septiembre 1–19. TikTok: datos del embudo reportado. En TikTok, “Search → Add to Cart” se utiliza como aproximación al tramo Producto → Carrito por la estructura disponible.</div>
+</section>
+
+<section class="section">
+<h2>Agosto: la liquidación cambia el contexto, no el diagnóstico</h2>
+<div class="context">
+  <div class="card aug">
+    <div class="eyebrow">Contexto</div>
+    <h3>Mucho más volumen</h3>
+    <div class="metric">1.275.200</div>
+    <p><b>¿Qué significa?</b> Fueron los inicios de sesión de agosto, frente a 560.437 en junio. La liquidación aumentó fuertemente el volumen.</p>
+  </div>
+  <div class="card">
+    <div class="eyebrow">Comportamiento</div>
+    <h3>Las primeras tasas se mantuvieron</h3>
+    <p><b>¿Qué significa?</b> Tráfico → Producto fue 55,9% en Ago frente a 55,2% en Jun. Producto → Carrito fue 21,5% frente a 21,7%. No se observa en agosto una ruptura estructural en esos tramos.</p>
+  </div>
+</div>
+<div class="priority"><b>Qué revisar por el efecto de la liquidación:</b> comparar contra septiembre el mix de productos, precios, promociones, variantes y stock. Agosto debe leerse como un mes con un contexto comercial diferente.</div>
+</section>
+
+<section class="section">
+<h2>¿Dónde puede estar impactando las ventas?</h2>
+<div class="checks">
+  <div class="check"><div class="tag">01 · Producto</div><h3>Menos usuarios deciden agregar</h3><p><b>Qué revisar:</b> productos más vistos vs. productos agregados, precio, promociones, variantes y disponibilidad.</p></div>
+  <div class="check"><div class="tag">02 · Carrito</div><h3>Se pierde intención antes del siguiente paso</h3><p><b>Qué revisar:</b> botón de continuar, experiencia móvil, errores, condiciones del carrito y facilidad para avanzar.</p></div>
+  <div class="check"><div class="tag">03 · Inicio de compra</div><h3>Menos usuarios llegan al proceso</h3><p><b>Qué revisar:</b> costos de envío, cargos adicionales, requisitos, fricciones y posibles errores antes de iniciar la compra.</p></div>
+</div>
+<div class="priority"><b>Prioridad:</b> Producto → Carrito → Inicio de compra. La evidencia no apunta a un problema principal de llegada al sitio ni a una caída en la conversión final de quienes ya iniciaron la compra.</div>
+</section>
+
+<section class="section">
+<h2>Conclusión ejecutiva</h2>
+<div class="bigcard">
+<p style="font-size:18px;line-height:1.8;color:#d8dee5;margin:0">
+<b style="color:var(--green)">Campañas y tráfico se mantienen estables.</b> De cada 100 usuarios que inician sesión, aproximadamente 55 llegan a ver un producto, y esta proporción se mantiene entre Jun, Ago y Sep.
+<b style="color:var(--yellow)">La primera alerta aparece en Producto → Carrito:</b> el avance baja de 21,5% en Ago a 16,7% en Sep.
+<b style="color:var(--red)">La principal pérdida está en Carrito → Inicio de compra:</b> el avance baja de 31,2% en Ago a 27,2% en Sep y el abandono sube a 72,8%.
+Finalmente, <b style="color:var(--green)">Inicio de compra → Compra mejora</b>: 44,3% en Sep frente a 39,6% en Ago.
+Por eso, el foco debe estar en entender <b>qué cambió entre Producto, Carrito e Inicio de compra</b>, especialmente después de la liquidación de agosto.
+</p>
+</div>
+</section>
+
+</div>
+</body>
+</html>
